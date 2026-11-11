@@ -1,6 +1,6 @@
 # KP SMSF quiz
 
-The Fundwise Capital SMSF quiz for Kien Phan (version B of the SMSF ad test): one question per screen, then contact details, then a short "done" screen before it sends people on to the SMSF landing page.
+The Fundwise Capital SMSF quiz for Kien Phan (version B of the SMSF ad test): one question per screen, then contact details, then a short "done" screen before it sends people on to the SMSF landing page, which then shows a thank-you card in place of its form.
 Static HTML, CSS and JS, no build step. Deploy on Vercel as a static site (framework preset "Other").
 
 Run locally: `npx -y serve -l 3009 .` then open http://localhost:3009
