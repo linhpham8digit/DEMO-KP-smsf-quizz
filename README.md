@@ -5,5 +5,5 @@ Static HTML, CSS and JS, no build step. Deploy on Vercel as a static site (frame
 
 Run locally: `npx -y serve -l 3009 .` then open http://localhost:3009
 
-Where it sends people when they finish is the `data-thanks` value on `#quiz` in `index.html`, currently `https://kp-smsf-landingpage.vercel.app/`. Change it to the landing page's real domain once that exists.
+Where it sends people when they finish is the `data-thanks` value on `#quiz` in `index.html`, currently `https://demo-kp-smsf-landingpage.vercel.app/`. Change it to the landing page's real domain once that exists.
 The quiz is not connected yet: finishing it does not send the lead anywhere (see `assets/js/lead.js`).
