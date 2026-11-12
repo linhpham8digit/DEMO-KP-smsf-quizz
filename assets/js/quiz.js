@@ -1,5 +1,5 @@
-/* Version B: the quiz. One question per screen, a tap moves on by itself, back link,
-   progress starts near 15%. The last step is the contact step, which fills the same
+/* Version B: the quiz. One question per screen, a tap moves on by itself. The progress bar
+   has one segment per step; tapping a step already reached goes back to it. The last step is the contact step, which fills the same
    lead record as the full form. Built with DOM methods and textContent only. */
 (function () {
   "use strict";
@@ -61,7 +61,7 @@
 
   function isRefi(goal) { return goal === "Refinance my loan" || goal === SMSF_Q1[2]; }
 
-  var S = { step: 0, ans: {}, contact: {} };
+  var S = { step: 0, max: 0, ans: {}, contact: {} };   // max: furthest step reached
 
   /* ---------- tiny DOM helpers ---------- */
   // Display only: tie the last two words of a line with a no-break space so a single
@@ -79,7 +79,6 @@
     return n;
   }
 
-  var intro = document.getElementById("quizIntro");
   var body = document.getElementById("quizBody");
 
   /* ---------- motion: questions slide in the way you are going, a picked answer
@@ -87,7 +86,6 @@
      who asks for reduced motion. ---------- */
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var dir = 1;
-  var lastPct = 15;
   var busy = false;
 
   function go(delta) {
@@ -115,41 +113,41 @@
 
   function progress(stepIndex, total) {
     var wrap = el("div", "progress");
-    var bar = el("div", "progress__bar");
-    var fill = el("i");
-    var pct = Math.round(15 + 85 * stepIndex / total);
-    // start from where the last bar was, then grow or shrink to the new value
-    fill.style.width = (reduce ? pct : lastPct) + "%";
-    if (!reduce) requestAnimationFrame(function () { requestAnimationFrame(function () { fill.style.width = pct + "%"; }); });
-    lastPct = pct;
-    bar.appendChild(fill);
-    bar.setAttribute("role", "progressbar");
-    bar.setAttribute("aria-valuemin", "1");
-    bar.setAttribute("aria-valuemax", String(total));
-    bar.setAttribute("aria-valuenow", String(stepIndex + 1));
+    var bar = el("ol", "progress__steps");
+    bar.setAttribute("aria-label", "Steps");
+    for (var i = 0; i < total; i++) {
+      var li = el("li");
+      var seg = el("button", "progress__seg");
+      seg.type = "button";
+      var label = i === total - 1 ? "Your details" : "Question " + (i + 1);
+      if (i < stepIndex) seg.classList.add("is-done");
+      else if (i === stepIndex) { seg.classList.add("is-current"); seg.setAttribute("aria-current", "step"); }
+      else if (i <= S.max) seg.classList.add("is-ahead");
+      if (i > S.max || i === stepIndex) { seg.disabled = true; seg.setAttribute("aria-label", label); }
+      else {
+        seg.setAttribute("aria-label", "Go to " + label.toLowerCase());
+        seg.addEventListener("click", (function (to) { return function () { go(to - S.step); }; })(i));
+      }
+      li.appendChild(seg);
+      bar.appendChild(li);
+    }
     wrap.appendChild(bar);
-    wrap.appendChild(el("span", "progress__label", "Step " + (stepIndex + 1) + " of " + total));
-    return wrap;
-  }
-
-  function foot(withBack, trustText) {
-    var f = el("div", "quiz-foot");
-    if (withBack) {
+    var row = el("div", "progress__row");
+    row.appendChild(el("span", "progress__label", "Step " + (stepIndex + 1) + " of " + total));
+    if (stepIndex > 0) {
       var b = el("button", "back", "← Back");
       b.type = "button";
       b.addEventListener("click", function () { go(-1); });
-      f.appendChild(b);
-    } else {
-      f.appendChild(el("span"));
+      row.appendChild(b);
     }
-    if (trustText) f.appendChild(el("span", "trust", tie(trustText)));
-    return f;
+    wrap.appendChild(row);
+    return wrap;
   }
 
   function render(focus) {
     var list = steps(S.ans);
     var total = list.length + 1;
-    intro.hidden = S.step !== 0;
+    S.max = Math.min(Math.max(S.max, S.step), total - 1);
     body.textContent = "";
     body.classList.remove("is-out-fwd", "is-out-back", "is-in-fwd", "is-in-back");
     if (focus && !reduce) {
@@ -179,6 +177,7 @@
             // Switched between buying and refinance: the other branch's answers no longer apply.
             S.ans = {};
             S.ans[s.key] = label;
+            S.max = S.step;
           }
           Array.prototype.forEach.call(opts.children, function (c) { c.classList.toggle("is-picked", c === b); });
           opts.classList.add("has-pick");
@@ -187,7 +186,6 @@
         opts.appendChild(b);
       });
       body.appendChild(opts);
-      body.appendChild(foot(S.step > 0, S.step === 0 ? "Free · No obligation · Takes 60 seconds" : ""));
       if (focus) q.focus({ preventScroll: true });
       return;
     }
@@ -312,7 +310,6 @@
     });
 
     body.appendChild(form);
-    body.appendChild(foot(true, ""));
     if (focus) q.focus({ preventScroll: true });
   }
 
@@ -322,7 +319,6 @@
     var gone = false;
     function leave() { if (gone) return; gone = true; L.submit(rec, THANKS); }
 
-    intro.hidden = true;
     body.textContent = "";
     body.classList.remove("is-out-fwd", "is-out-back", "is-in-fwd", "is-in-back");
     if (!reduce) { void body.offsetWidth; body.classList.add("is-in-fwd"); }
