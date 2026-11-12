@@ -313,7 +313,7 @@
     if (focus) q.focus({ preventScroll: true });
   }
 
-  /* ---------- done: confirm first, then move on to the SMSF page ---------- */
+  /* ---------- done: confirm first, then move on to the landing page ---------- */
   var DONE_MS = 3500;
   function renderDone(rec) {
     var gone = false;
@@ -334,7 +334,7 @@
     wrap.appendChild(el("p", "quiz-done__text", tie("Kien’s team will call you within 15 minutes in business hours to walk through your options.")));
 
     var next = el("div", "quiz-done__next");
-    next.appendChild(el("span", "quiz-done__label", "Taking you to the SMSF page"));
+    next.appendChild(el("span", "quiz-done__label", PAGE === "smsf" ? "Taking you to the SMSF page" : "Taking you to Kien’s page"));
     var bar = el("span", "quiz-done__bar");
     var fill = el("i");
     fill.style.animationDuration = DONE_MS + "ms";
