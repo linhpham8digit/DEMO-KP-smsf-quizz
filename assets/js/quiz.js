@@ -14,7 +14,7 @@
   var membersStep = {
     key: "members_working",
     q: "Are the fund’s members still working and paying into super?",
-    o: ["Yes, employed (PAYG)", "Yes, self-employed", "Mostly retired", "Not sure"]
+    o: ["Yes, employed (PAYG)", "Yes, self-employed", "Yes, a mix of both", "Mostly retired", "Not sure"]
   };
 
   var HOME_Q1 = ["Buy my first home", "Buy my next home", "Buy an investment property", "Refinance my loan"];
@@ -51,7 +51,6 @@
     return [
       { key: "smsf_goal", q: "What would you like help with?", o: SMSF_Q1 },
       { key: "smsf_setup", q: "Is your SMSF set up?", o: ["Yes", "Being set up with my accountant", "Not yet"] },
-      { key: "property_use", q: "Who will use the property?", o: ["My own business", "A business tenant I’m not related to", "Not decided yet"] },
       { key: "price_band", q: "Roughly what price?", o: ["Under $500k", "$500k to $1m", "$1m to $2m", "$2m+", "Not sure"] },
       { key: "fund_balance", q: "How much is in the fund, all members combined?", o: ["Under $200k", "$200k to $400k", "$400k to $750k", "$750k+", "Prefer not to say"] },
       membersStep,
@@ -353,7 +352,6 @@
         rec.property_value = a.property_value || "";
       } else {
         rec.smsf_setup = a.smsf_setup || "";
-        rec.property_use = a.property_use || "";
         rec.price_band = a.price_band || "";
         rec.fund_balance = a.fund_balance || "";
       }
