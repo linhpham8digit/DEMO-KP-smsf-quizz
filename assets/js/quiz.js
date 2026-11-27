@@ -21,22 +21,49 @@
   var SMSF_Q1 = ["Buy premises for my own business", "Buy commercial property as an investment",
                  "Refinance my SMSF’s existing loan", "Not sure yet"];
 
+  // Home loans price bands. First home buyers see bands that follow each state's price levels;
+  // every other buying path, and a first home buyer with no state yet, sees one shared list.
+  var FIRST_HOME_PRICES = {
+    NSW: ["Under $800k", "$800k to $1m", "$1m to $1.5m"],
+    VIC: ["Under $600k", "$600k to $950k", "$950k to $1.5m"],
+    QLD: ["Under $700k", "$700k to $1m", "$1m to $1.5m"],
+    WA: ["Under $600k", "$600k to $850k", "$850k to $1.5m"],
+    SA: ["Under $500k", "$500k to $900k", "$900k to $1.5m"],
+    TAS: ["Under $550k", "$550k to $700k", "$700k to $1.5m"],
+    ACT: ["Under $750k", "$750k to $1m", "$1m to $1.5m"],
+    NT: ["Under $750k", "$750k to $1m", "$1m to $1.5m"]
+  };
+  var BUY_TAIL = ["$1.5m to $2.5m", "$2.5m+", "Not sure"];
+  function homePrices(goal, state) {
+    if (goal === "Refinance my loan") return ["Under $500k", "$500k to $750k", "$750k to $1m", "$1m to $1.5m", "$1.5m+", "Not sure"];
+    var head = goal === "Buy my first home" && FIRST_HOME_PRICES[state];
+    return (head || ["Under $600k", "$600k to $1m", "$1m to $1.5m"]).concat(BUY_TAIL);
+  }
+
   function allSteps(ans) {
     if (PAGE === "home-loans") {
-      var refi = ans.goal === "Refinance my loan";
-      return [
+      var g = ans.goal;
+      var refi = g === "Refinance my loan";
+      var first = g === "Buy my first home";
+      var BUY_STAGE = ["Found a property", "Pre-approved, still looking", "Looking, no pre-approval yet", "Planning, 6+ months"];
+      var REFI_STAGE = ["Fixed rate ending soon", "Rate feels high", "Access equity or consolidate debt", "Just checking"];
+      var list = [
         { key: "goal", q: "What are you looking to do?", o: HOME_Q1 },
-        { key: "stage", q: "Where are you up to?", o: refi
-            ? ["Fixed rate ending soon", "Rate feels high", "Want to access equity", "Just checking"]
-            : ["Found a property", "Pre-approved, still looking", "Looking, no pre-approval yet", "Planning, 6+ months"] },
-        { key: "price_band", q: refi ? "Roughly how much is the loan?" : "Roughly what price?",
-          o: ["Under $600k", "$600k to $900k", "$900k to $1.3m", "$1.3m to $2m", "$2m+", "Not sure"] },
-        { key: "deposit_band", q: refi ? "How much equity do you have?" : "How much deposit do you have?",
-          o: ["Under 5%", "5 to 10%", "10 to 20%", "20%+", "Not sure"] },
+        stateStep,
+        { key: "stage", q: refi ? "What’s prompting the refinance?" : "Where are you up to?", o: refi ? REFI_STAGE : BUY_STAGE },
+        { key: "price_band", q: refi ? "Roughly how much is the loan?" : "Roughly what price?", o: homePrices(g, ans.state) },
+        { key: "deposit_band",
+          q: refi ? "How much equity do you have?" : first ? "How much deposit do you have?" : "How much deposit or equity do you have?",
+          o: refi ? ["Under 20%", "20 to 30%", "30 to 40%", "40%+", "Not sure"]
+                  : ["Under 5%", "5 to 10%", "10 to 20%", "20%+", "Not sure"] },
         { key: "residency", q: "What’s your residency status?",
-          o: ["Australian citizen", "Permanent resident", "Temporary visa holder", "Non-resident"] },
-        stateStep
+          o: ["Australian citizen", "Permanent resident", "Temporary visa holder", "Non-resident"] }
       ];
+      if (first) list.push({ key: "build_type", q: "New build or established?", o: ["New build", "Established", "Not sure yet"] });
+      else if (g === "Buy my next home") list.push({ key: "sell_first", q: "Do you need to sell your current home first?", o: ["Yes", "No", "Not sure yet"] });
+      else if (g === "Buy an investment property") list.push({ key: "use_equity", q: "Are you using equity from an existing property?", o: ["Yes", "No", "Not sure"] });
+      else if (refi) list.push({ key: "loan_use", q: "Is it your home or an investment?", o: ["Home I live in", "Investment property"] });
+      return list;
     }
     if (ans.smsf_goal === SMSF_Q1[2]) {
       return [
@@ -58,13 +85,17 @@
     ];
   }
 
-  // Home loans only: Not sure on step 3 (the price) skips step 4 (the deposit) and goes straight
-  // to step 5. Any answer already given to step 4 is dropped. The SMSF quiz never skips a step.
+  // Home loans only: Not sure on the price (or loan amount) skips the deposit (or equity) step.
+  // Any answer already given to the skipped step is dropped, and so is a price that is not on
+  // the current list (the state or the goal changed after it was picked). The SMSF quiz never skips.
   function steps(ans) {
     var list = allSteps(ans);
-    if (PAGE === "home-loans" && list.length > 3 && ans[list[2].key] === "Not sure") {
-      delete ans[list[3].key];
-      list.splice(3, 1);
+    if (PAGE !== "home-loans") return list;
+    var p = list[3];
+    if (ans.price_band && p.o.indexOf(ans.price_band) < 0) delete ans.price_band;
+    if (ans.price_band === "Not sure") {
+      delete ans.deposit_band;
+      list.splice(4, 1);
     }
     return list;
   }
